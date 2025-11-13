@@ -15,3 +15,7 @@ bld/
 msbuild.log
 msbuild.err
 msbuild.wrn
+
+# ssh keys
+id_rsa
+id_rsa.pub

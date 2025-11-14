@@ -1,26 +1,24 @@
-using System.Diagnostics;
+using IntroBot3.Settings;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace IntroBot3.Services;
 
-public class YtDlpService(ExecutableService executableService)
+public class YtDlpService(ExecutableService executableService, IOptions<ThemeCacheSettings> options, ILogger<YtDlpService> logger)
 {
-    // join to directory of executable
-    private readonly string folderPath = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar + "yt-dlp-files";
-    private readonly string exePath = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar + "yt-dlp-files" + Path.DirectorySeparatorChar + "yt-dlp";
     private readonly ExecutableService executableService = executableService;
+    private readonly string themeCachePath = options.Value.Path;
+    private readonly ILogger<YtDlpService> logger = logger;
 
-    public async Task<Result> DownloadFromUrl(string url, string range, string fileName)
+    public async Task DownloadFromUrl(string url, string range, string fileName)
     {
-        var ytDlpExists = await executableService.EnsureLibrariesExistAsync();
+        await executableService.EnsureLibrariesExistAsync();
+        await ExecutableService.CreateDirectoryIfNotExists(themeCachePath);
 
-        return Result.Success;
-        // if (ytDlpExists == Result.Fail)
-        // {
-        //     return Result.Fail;
-        // }
+        var filePath = Path.Combine(themeCachePath, fileName);
 
-        // var ytDlpResult = await Run(exePath, $" -P theme-cache -o {fileName} -x --audio-format opus -q {url} --download-section \"*{range}\" --max-filesize 100M --force-overwrites");
-        // return ytDlpResult;
+        logger.LogInformation("Starting download from yt-dlp... for {url} in range {range} to {filePath}", url, range, filePath);
+        await ExecutableService.Run("yt-dlp", $"-P theme-cache -o {filePath} -x --audio-format opus -q {url} --download-section \"*{range}\" --max-filesize 100M --force-overwrites");
+        logger.LogInformation("Download completed: {filePath}", filePath);
     }
 }

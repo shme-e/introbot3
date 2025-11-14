@@ -9,8 +9,8 @@ public class ExecutableService
 {
     private readonly string folderPath;
     private readonly string tempFolderPath;
-    private readonly string ytDlpPath;
-    private readonly string ffmpegPath;
+    public readonly string YtDlpPath;
+    public readonly string FfmpegPath;
     private readonly ILogger<ExecutableService> logger;
     private readonly HttpClientService httpClientService;
 
@@ -18,145 +18,96 @@ public class ExecutableService
     {
         folderPath = options.Value.DownloadPath;
         tempFolderPath = Path.Combine(folderPath, "temp");
-        ytDlpPath = Path.Combine(folderPath, "yt-dlp");
-        ffmpegPath = Path.Combine(folderPath, "ffmpeg");
+        YtDlpPath = Path.Combine(folderPath, "yt-dlp");
+        FfmpegPath = Path.Combine(folderPath, "ffmpeg");
         this.logger = logger;
         this.httpClientService = httpClientService;
     }
 
-    public async Task<Result> EnsureLibrariesExistAsync()
+    public async Task EnsureLibrariesExistAsync()
     {
-        var folderResult = await EnsureProgramDirectoryExists();
-        if (folderResult == Result.Fail)
-        {
-            return Result.Fail;
-        }
-        var ytDlpResult = await EnsureYtDlpExists();
-        if (ytDlpResult == Result.Fail)
-        {
-            return Result.Fail;
-        }
-        var ffmpegResult = await EnsureFfmpegExists();
-        if (ffmpegResult == Result.Fail)
-        {
-            return Result.Fail;
-        }
-        return Result.Success;
+        await EnsureProgramDirectoryExists();
+        await EnsureYtDlpExists();
+        await EnsureFfmpegExists();
+        ExportLibFolderToPath();
     }
 
-    private async Task<Result> EnsureYtDlpExists()
+    private async Task EnsureYtDlpExists()
     {
-        if (!File.Exists(ytDlpPath))
+        if (!File.Exists(YtDlpPath))
         {
             logger.LogInformation("yt-dlp not found, downloading...");
-            var result = await httpClientService.DownloadFileAsync("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", ytDlpPath);
-            if (result == Result.Fail)
-            {
-                logger.LogError("Failed to download yt-dlp.");
-                return Result.Fail;
-            }
+            await httpClientService.DownloadFileAsync("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", YtDlpPath);
             logger.LogInformation("yt-dlp downloaded successfully.");
 
             // Make executable
             logger.LogInformation("Making yt-dlp executable...");
-            var chmodResult = await Run("chmod", $"+x {ytDlpPath}");
-            if (chmodResult == Result.Fail)
-            {
-                logger.LogError("Failed to make yt-dlp executable.");
-                return Result.Fail;
-            }
+            await Run("chmod", $"+x {YtDlpPath}");
             logger.LogInformation("yt-dlp is now executable.");
         }
-        return Result.Success;
     }
 
-    private async Task<Result> EnsureFfmpegExists()
+    private async Task EnsureFfmpegExists()
     {
-        if (!File.Exists(ffmpegPath))
+        if (!File.Exists(FfmpegPath))
         {
-            var tempFolderResult = await EnsureTempDirectoryExists();
-            if (tempFolderResult == Result.Fail)
-            {
-                return Result.Fail;
-            }
+            await EnsureTempDirectoryExists();
 
             logger.LogInformation("ffmpeg not found, downloading...");
-            var result = await httpClientService.DownloadFileAsync("https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz", $"{folderPath}/temp/ffmpeg.tar.xz");
-            if (result == Result.Fail)
-            {
-                logger.LogError("Failed to download ffmpeg.");
-                return Result.Fail;
-            }
+            await httpClientService.DownloadFileAsync("https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz", $"{folderPath}/temp/ffmpeg.tar.xz");
             logger.LogInformation("ffmpeg downloaded successfully.");
 
             // Extract ffmpeg
             logger.LogInformation("Extracting ffmpeg...");
-            var tarResult = await Run("tar", $"-xf {folderPath}/temp/ffmpeg.tar.xz -C {folderPath}/temp --strip-components=1");
-            if (tarResult == Result.Fail)
-            {
-                logger.LogError("Failed to extract ffmpeg.");
-                return Result.Fail;
-            }
-
-            // Move ffmpeg binary to target path
-            File.Move($"{folderPath}/temp/bin/ffmpeg", ffmpegPath);
+            await Run("tar", $"-xf {folderPath}/temp/ffmpeg.tar.xz -C {folderPath}/temp --strip-components=1");
+            File.Move($"{folderPath}/temp/bin/ffmpeg", FfmpegPath);
             logger.LogInformation("ffmpeg extracted successfully.");
 
             // Make executable
             logger.LogInformation("Making ffmpeg executable...");
-            var chmodResult = await Run("chmod", $"+x {ffmpegPath}");
-            if (chmodResult == Result.Fail)
-            {
-                logger.LogError("Failed to make ffmpeg executable.");
-                return Result.Fail;
-            }
+            await Run("chmod", $"+x {FfmpegPath}");
             logger.LogInformation("ffmpeg is now executable.");
 
             // Clean up temp files
             Directory.Delete(tempFolderPath, true);
         }
-        return Result.Success;
     }
 
-    private async Task<Result> EnsureProgramDirectoryExists()
+    private async Task EnsureProgramDirectoryExists()
     {
-        if (!Directory.Exists(folderPath))
+        await CreateDirectoryIfNotExists(folderPath);
+    }
+
+    private async Task EnsureTempDirectoryExists()
+    {
+        await CreateDirectoryIfNotExists(tempFolderPath);
+    }
+
+    private void ExportLibFolderToPath()
+    {
+        var currentPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        if (!currentPath.Split(Path.PathSeparator).Contains(folderPath))
         {
-            logger.LogInformation("Program directory not found, creating...");
-            Directory.CreateDirectory(folderPath);
+            var newPath = $"{currentPath}{Path.PathSeparator}{folderPath}";
+            Environment.SetEnvironmentVariable("PATH", newPath);
+        }
+    }
+
+    public static async Task CreateDirectoryIfNotExists(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
             await Task.Delay(500);
 
-            if (!Directory.Exists(folderPath))
+            if (!Directory.Exists(path))
             {
-                logger.LogError("Failed to create program directory.");
-                return Result.Fail;
+                throw new Exception($"Failed to create directory at {path}.");
             }
-
-            logger.LogInformation("Program directory created.");
         }
-        return Result.Success;
     }
 
-    private async Task<Result> EnsureTempDirectoryExists()
-    {
-        if (!Directory.Exists(tempFolderPath))
-        {
-            logger.LogInformation("Temp directory not found, creating...");
-            Directory.CreateDirectory(tempFolderPath);
-            await Task.Delay(500);
-
-            if (!Directory.Exists(tempFolderPath))
-            {
-                logger.LogError("Failed to create temp directory.");
-                return Result.Fail;
-            }
-
-            logger.LogInformation("Temp directory created.");
-        }
-        return Result.Success;
-    }
-
-    private static async Task<Result> Run(string command, string arguments)
+    public static async Task Run(string command, string arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -171,10 +122,14 @@ public class ExecutableService
 
         if (process == null)
         {
-            return Result.Fail;
+            throw new Exception($"Failed to start process {command} {arguments}.");
         }
 
         await process.WaitForExitAsync();
-        return process.ExitCode == 0 ? Result.Success : Result.Fail;
+
+        if (process.ExitCode != 0)
+        {
+            throw new Exception($"Process {command} {arguments} exited with code {process.ExitCode}.");
+        }
     }
 }

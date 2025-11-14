@@ -9,7 +9,7 @@ public class HttpClientService
         _httpClient = new HttpClient();
     }
 
-    public async Task<Result> DownloadFileAsync(string url, string path)
+    public async Task DownloadFileAsync(string url, string path)
     {
         var response = await _httpClient.GetAsync(url);
         response.EnsureSuccessStatusCode();
@@ -17,6 +17,5 @@ public class HttpClientService
     
         using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
         await stream.CopyToAsync(fileStream);
-        return Result.Success;
     }
 }

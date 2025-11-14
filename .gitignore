@@ -20,5 +20,6 @@ msbuild.wrn
 id_rsa
 id_rsa.pub
 
-# introbot downloaded binaries
+# introbot runtime files
 lib/
+theme-cache/

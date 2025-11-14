@@ -5,13 +5,10 @@ using NetCord.Hosting;
 using NetCord.Hosting.Gateway;
 using NetCord.Hosting.Services;
 using NetCord.Hosting.Services.ApplicationCommands;
-using dotenv.net;
 using IntroBot3.Services;
 using IntroBot3;
 using Microsoft.Extensions.Configuration;
 using IntroBot3.Settings;
-
-DotEnv.Load();
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -23,6 +20,7 @@ builder.Services
     .AddScoped<ExecutableService>()
     .AddScoped<YtDlpService>()
     .Configure<ExecutablesSettings>(builder.Configuration.GetSection("Executables"))
+    .Configure<ThemeCacheSettings>(builder.Configuration.GetSection("ThemeCache"))
     .AddOptions<IDiscordOptions>();
 
 builder.Configuration.AddUserSecrets<Program>();

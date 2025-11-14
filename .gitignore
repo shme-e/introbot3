@@ -19,3 +19,6 @@ msbuild.wrn
 # ssh keys
 id_rsa
 id_rsa.pub
+
+# introbot downloaded binaries
+lib/

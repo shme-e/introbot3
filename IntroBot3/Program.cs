@@ -9,6 +9,7 @@ using dotenv.net;
 using IntroBot3.Services;
 using IntroBot3;
 using Microsoft.Extensions.Configuration;
+using IntroBot3.Settings;
 
 DotEnv.Load();
 
@@ -16,9 +17,12 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services
     .AddDiscordGateway()
+    .AddGatewayHandlers(typeof(ReadyHandler).Assembly)
     .AddApplicationCommands()
     .AddSingleton<HttpClientService>()
+    .AddScoped<ExecutableService>()
     .AddScoped<YtDlpService>()
+    .Configure<ExecutablesSettings>(builder.Configuration.GetSection("Executables"))
     .AddOptions<IDiscordOptions>();
 
 builder.Configuration.AddUserSecrets<Program>();

@@ -15,8 +15,14 @@ public class StartThemeService(ThemePlayerService themePlayerService, IOptions<T
     {
         if (channelId.HasValue)
         {
-            userChannelMap[userId] = channelId.Value;
-            await themePlayerService.AddThemeToQueue(client, new Theme(ThemeType.Intro, userId, channelId.Value, guildId, themePath));
+            // if this is a new join or a move to a diff channel
+            // must be careful since this event triggers on eg unmuting
+            if (!userChannelMap.TryGetValue(userId, out ulong value) || value != channelId.Value)
+            {
+                value = channelId.Value;
+                userChannelMap[userId] = value;
+                await themePlayerService.AddThemeToQueue(client, new Theme(ThemeType.Intro, userId, channelId.Value, guildId, themePath));
+            }
         }
         else
         {

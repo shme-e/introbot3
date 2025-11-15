@@ -8,7 +8,6 @@ namespace IntroBot3.Services;
 public class ExecutableService
 {
     private readonly string folderPath;
-    private readonly string tempFolderPath;
     public readonly string YtDlpPath;
     public readonly string FfmpegPath;
     private readonly ILogger<ExecutableService> logger;
@@ -17,7 +16,6 @@ public class ExecutableService
     public ExecutableService(IOptions<ExecutablesSettings> options, ILogger<ExecutableService> logger, HttpClientService httpClientService)
     {
         folderPath = options.Value.DownloadPath;
-        tempFolderPath = Path.Combine(folderPath, "temp");
         YtDlpPath = Path.Combine(folderPath, "yt-dlp");
         FfmpegPath = Path.Combine(folderPath, "ffmpeg");
         this.logger = logger;
@@ -28,7 +26,6 @@ public class ExecutableService
     {
         await EnsureProgramDirectoryExists();
         await EnsureYtDlpExists();
-        await EnsureFfmpegExists();
         ExportLibFolderToPath();
     }
 
@@ -46,41 +43,9 @@ public class ExecutableService
             logger.LogInformation("yt-dlp is now executable.");
         }
     }
-
-    private async Task EnsureFfmpegExists()
-    {
-        if (!File.Exists(FfmpegPath))
-        {
-            await EnsureTempDirectoryExists();
-
-            logger.LogInformation("ffmpeg not found, downloading...");
-            await httpClientService.DownloadFileAsync("https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz", $"{folderPath}/temp/ffmpeg.tar.xz");
-            logger.LogInformation("ffmpeg downloaded successfully.");
-
-            // Extract ffmpeg
-            logger.LogInformation("Extracting ffmpeg...");
-            await Run("tar", $"-xf {folderPath}/temp/ffmpeg.tar.xz -C {folderPath}/temp --strip-components=1");
-            File.Move($"{folderPath}/temp/bin/ffmpeg", FfmpegPath);
-            logger.LogInformation("ffmpeg extracted successfully.");
-
-            // Make executable
-            logger.LogInformation("Making ffmpeg executable...");
-            await Run("chmod", $"+x {FfmpegPath}");
-            logger.LogInformation("ffmpeg is now executable.");
-
-            // Clean up temp files
-            Directory.Delete(tempFolderPath, true);
-        }
-    }
-
     private async Task EnsureProgramDirectoryExists()
     {
         await CreateDirectoryIfNotExists(folderPath);
-    }
-
-    private async Task EnsureTempDirectoryExists()
-    {
-        await CreateDirectoryIfNotExists(tempFolderPath);
     }
 
     private void ExportLibFolderToPath()

@@ -19,6 +19,8 @@ builder.Services
     .AddSingleton<HttpClientService>()
     .AddScoped<ExecutableService>()
     .AddScoped<YtDlpService>()
+    .AddSingleton<StartThemeService>()
+    .AddSingleton<ThemePlayerService>()
     .Configure<ExecutablesSettings>(builder.Configuration.GetSection("Executables"))
     .Configure<ThemeCacheSettings>(builder.Configuration.GetSection("ThemeCache"))
     .AddOptions<IDiscordOptions>();

@@ -7,3 +7,5 @@
 open in dev container
 
 use vscode debugger (f5)
+
+if everything is broken, f1 > reload window

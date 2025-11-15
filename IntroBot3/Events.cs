@@ -13,3 +13,21 @@ public class ReadyHandler(ExecutableService executableService) : IReadyGatewayHa
         await executableService.EnsureLibrariesExistAsync();
     }
 }
+
+public class UserVoiceStateUpdateHandler(StartThemeService startThemeService, GatewayClient client) : IVoiceStateUpdateGatewayHandler
+{
+    public async ValueTask HandleAsync(VoiceState args)
+    {
+        if (args.User == null)
+        {
+            return;
+        }
+
+        if (args.User.IsBot == true)
+        {
+            return;
+        }
+
+        await startThemeService.HandleChannelMove(args.UserId, args.ChannelId, args.GuildId, client);
+    }
+}

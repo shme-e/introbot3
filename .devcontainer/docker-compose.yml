@@ -1,0 +1,12 @@
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../:/workspaces/introbot3:cached
+      - secrets:/home/vscode/.microsoft/usersecrets:rw
+    command: bash -c "chown -R vscode:vscode /home/vscode/.microsoft/usersecrets && sleep infinity"
+
+volumes:
+  secrets:

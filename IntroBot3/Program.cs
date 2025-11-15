@@ -5,10 +5,11 @@ using NetCord.Hosting;
 using NetCord.Hosting.Gateway;
 using NetCord.Hosting.Services;
 using NetCord.Hosting.Services.ApplicationCommands;
-using IntroBot3.Services;
-using IntroBot3;
 using Microsoft.Extensions.Configuration;
-using IntroBot3.Settings;
+using IntroBot3.Discord;
+using IntroBot3.BotLogic.Services;
+using IntroBot3.BotLogic.Settings;
+using IntroBot3.BotLogic.Services.Events;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -21,6 +22,8 @@ builder.Services
     .AddScoped<YtDlpService>()
     .AddSingleton<StartThemeService>()
     .AddSingleton<ThemePlayerService>()
+    .AddScoped<ReadyService>()
+    .AddScoped<UserVoiceChannelMoveService>()
     .Configure<ExecutablesSettings>(builder.Configuration.GetSection("Executables"))
     .Configure<ThemeCacheSettings>(builder.Configuration.GetSection("ThemeCache"))
     .AddOptions<IDiscordOptions>();
@@ -40,6 +43,6 @@ lifetime.ApplicationStopping.Register(() =>
     Console.WriteLine("Stopping end");
 });
 
-host.AddModules(typeof(Commands).Assembly);
+host.AddModules(typeof(CommandModule).Assembly);
 
-await host.RunAsync();
+await host.RunAsync().ConfigureAwait(false);

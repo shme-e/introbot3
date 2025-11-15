@@ -1,4 +1,4 @@
-namespace IntroBot3.Services;
+namespace IntroBot3.BotLogic.Services;
 
 public class HttpClientService
 {
@@ -9,12 +9,12 @@ public class HttpClientService
         _httpClient = new HttpClient();
     }
 
-    public async Task DownloadFileAsync(string url, string path)
+    public async Task DownloadFileAsync(Uri uri, string path)
     {
-        var response = await _httpClient.GetAsync(url);
-        response.EnsureSuccessStatusCode();
+        var response = await _httpClient.GetAsync(uri);
+        _ = response.EnsureSuccessStatusCode();
         var stream = await response.Content.ReadAsStreamAsync();
-    
+
         using var fileStream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
         await stream.CopyToAsync(fileStream);
     }

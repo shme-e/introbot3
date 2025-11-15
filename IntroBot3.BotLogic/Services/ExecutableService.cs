@@ -1,15 +1,15 @@
 using System.Diagnostics;
-using IntroBot3.Settings;
+using IntroBot3.BotLogic.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace IntroBot3.Services;
+namespace IntroBot3.BotLogic.Services;
 
 public class ExecutableService
 {
     private readonly string folderPath;
-    public readonly string YtDlpPath;
-    public readonly string FfmpegPath;
+    public string YtDlpPath { get; }
+    public string FfmpegPath { get; }
     private readonly ILogger<ExecutableService> logger;
     private readonly HttpClientService httpClientService;
 
@@ -34,7 +34,7 @@ public class ExecutableService
         if (!File.Exists(YtDlpPath))
         {
             logger.LogInformation("yt-dlp not found, downloading...");
-            await httpClientService.DownloadFileAsync("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", YtDlpPath);
+            await httpClientService.DownloadFileAsync(new Uri("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"), YtDlpPath);
             logger.LogInformation("yt-dlp downloaded successfully.");
 
             // Make executable
@@ -62,12 +62,12 @@ public class ExecutableService
     {
         if (!Directory.Exists(path))
         {
-            Directory.CreateDirectory(path);
+            _ = Directory.CreateDirectory(path);
             await Task.Delay(500);
 
             if (!Directory.Exists(path))
             {
-                throw new Exception($"Failed to create directory at {path}.");
+                throw new ProcessException($"Failed to create directory at {path}.");
             }
         }
     }
@@ -83,18 +83,27 @@ public class ExecutableService
             WindowStyle = ProcessWindowStyle.Hidden
         };
 
-        using var process = Process.Start(startInfo);
-
-        if (process == null)
-        {
-            throw new Exception($"Failed to start process {command} {arguments}.");
-        }
-
+        using var process = Process.Start(startInfo) ?? throw new ProcessException($"Failed to start process {command} {arguments}.");
         await process.WaitForExitAsync();
 
         if (process.ExitCode != 0)
         {
-            throw new Exception($"Process {command} {arguments} exited with code {process.ExitCode}.");
+            throw new ProcessException($"Process {command} {arguments} exited with code {process.ExitCode}.");
         }
+    }
+}
+
+public class ProcessException : Exception
+{
+    public ProcessException(string message) : base(message)
+    {
+    }
+
+    public ProcessException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    public ProcessException()
+    {
     }
 }

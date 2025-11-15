@@ -1,4 +1,4 @@
-namespace IntroBot3.Settings;
+namespace IntroBot3.BotLogic.Settings;
 
 public sealed class ThemeCacheSettings
 {

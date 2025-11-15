@@ -1,0 +1,26 @@
+# Enable all IDE warnings
+[*.cs]
+dotnet_analyzer_diagnostic.severity = warning
+
+# use var over explicit types
+dotnet_diagnostic.IDE0007.severity = warning
+dotnet_diagnostic.IDE0008.severity = none
+
+# dont configureawait
+dotnet_diagnostic.CA2007.severity = none
+
+# use file scoped namespace
+dotnet_diagnostic.IDE0160.severity = none
+dotnet_diagnostic.IDE0161.severity = none
+
+# no need to validate null on public methods
+dotnet_diagnostic.CA1062.severity = none
+
+# lets not configure idisposable
+dotnet_diagnostic.CA1001.severity = none
+
+# lets not optimise loggers
+dotnet_diagnostic.CA1848.severity = none
+
+# no docstrings needed
+dotnet_diagnostic.CS1591.severity = none

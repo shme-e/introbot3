@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../IntroBot3.BotLogic/IntroBot3.BotLogic.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Services/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetCord" Version="1.0.0-alpha.448" />
+    <PackageReference Include="NetCord.Hosting" Version="1.0.0-alpha.448" />
+    <PackageReference Include="NetCord.Hosting.Services" Version="1.0.0-alpha.448" />
+  </ItemGroup>
+
+</Project>

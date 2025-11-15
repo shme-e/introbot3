@@ -128,6 +128,8 @@ public class ThemePlayerService(ILogger<ThemePlayerService> logger)
 
                     await client.UpdateVoiceStateAsync(new VoiceStateProperties(theme.GuildId, null));
                 }
+                
+                _themeQueue.Dequeue();
             } catch (Exception)
             {
                 _themeQueue.Dequeue();

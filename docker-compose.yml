@@ -1,0 +1,13 @@
+services:
+  bot:
+    build: .
+    container_name: introbot3-bot
+    volumes:
+      - ./lib:/app/lib
+      - ./theme-cache:/app/theme-cache
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - Executables__DownloadPath=/app/lib
+      - ThemeCache__Path=/app/theme-cache

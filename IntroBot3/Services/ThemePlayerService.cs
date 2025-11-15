@@ -11,16 +11,21 @@ public class Theme(ThemeType type, ulong userId, ulong channelId, ulong guildId,
     public string FilePath { get; set; } = Path.Combine(basePath, $"{type.GetThemeTypeString()}-{userId}.opus");
     public ulong ChannelId { get; set; } = channelId;
     public ulong GuildId { get; set; } = guildId;
+
+    public bool Exists()
+    {
+        return File.Exists(FilePath);
+    }
 }
 
 public class ThemePlayerService(ILogger<ThemePlayerService> logger)
 {
     private readonly Queue<Theme> _themeQueue = new();
-    private ulong? _currentChannelId;
-    private OpusEncodeStream? _stream;
 
     public async Task AddThemeToQueue(GatewayClient client, Theme theme)
     {
+        if (!theme.Exists()) return;
+
         _themeQueue.Enqueue(theme);
         
         if (_themeQueue.Count == 1)
@@ -31,24 +36,38 @@ public class ThemePlayerService(ILogger<ThemePlayerService> logger)
 
     private async Task ProcessQueue(GatewayClient client)
     {
-        // await executableService.EnsureLibrariesExistAsync();
+        ulong? _currentChannelId = null;
+        OpusEncodeStream? _stream = null;
+        VoiceClient? _voiceClient = null;
 
         while (_themeQueue.Count > 0)
         {
-            var theme = _themeQueue.Dequeue();
+            var theme = _themeQueue.Peek();
 
-            var voiceClient = await client.JoinVoiceChannelAsync(theme.GuildId, theme.ChannelId, new VoiceClientConfiguration
+            if (_stream == null || _voiceClient == null || _currentChannelId == null || _currentChannelId != theme.ChannelId)
             {
-                Logger = new ConsoleLogger()
-            });
-            _currentChannelId = theme.ChannelId;
+                if (_voiceClient != null)
+                {
+                    await _voiceClient.CloseAsync();
+                    _voiceClient.Dispose();
+                }
 
-            await voiceClient.StartAsync();
-            await voiceClient.EnterSpeakingStateAsync(new SpeakingProperties(SpeakingFlags.Microphone));
+                _stream?.Dispose();
 
-            var outStream = voiceClient.CreateOutputStream();
+                _voiceClient = await client.JoinVoiceChannelAsync(theme.GuildId, theme.ChannelId, new VoiceClientConfiguration
+                {
+                    Logger = new ConsoleLogger()
+                });
+                _currentChannelId = theme.ChannelId;
 
-            _stream = new OpusEncodeStream(outStream, PcmFormat.Short, VoiceChannels.Stereo, OpusApplication.Audio);
+                await _voiceClient.StartAsync();
+                await Task.Delay(500);
+                await _voiceClient.EnterSpeakingStateAsync(new SpeakingProperties(SpeakingFlags.Microphone));
+
+                var outStream = _voiceClient.CreateOutputStream();
+
+                _stream = new OpusEncodeStream(outStream, PcmFormat.Short, VoiceChannels.Stereo, OpusApplication.Audio);
+            }
 
             ProcessStartInfo startInfo = new("ffmpeg")
             {
@@ -86,9 +105,28 @@ public class ThemePlayerService(ILogger<ThemePlayerService> logger)
 
             await ffmpeg.StandardOutput.BaseStream.CopyToAsync(_stream);
 
-            await ffmpeg.WaitForExitAsync();
-
             await _stream.FlushAsync();
+
+            if (_themeQueue.Count == 1)
+            {
+                await Task.Delay(5000);
+            }
+
+            if (_themeQueue.Count == 1)
+            {
+                await _voiceClient.CloseAsync();
+                _voiceClient.Dispose();
+                _voiceClient = null;
+
+                _stream.Dispose();
+                _stream = null;
+
+                _currentChannelId = null;
+
+                await client.UpdateVoiceStateAsync(new VoiceStateProperties(theme.GuildId, null));
+            }
+
+            _themeQueue.Dequeue();
         }
     }
 }

@@ -23,3 +23,6 @@ id_rsa.pub
 # introbot runtime files
 lib/
 theme-cache/
+
+# install libdave
+libdave.so

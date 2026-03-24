@@ -67,9 +67,9 @@ public class ThemePlayerService(ILogger<ThemePlayerService> logger)
                     await Task.Delay(250);
                     await _voiceClient.EnterSpeakingStateAsync(new SpeakingProperties(SpeakingFlags.Microphone));
 
-                    var outStream = _voiceClient.CreateOutputStream();
+                    var voiceStream = _voiceClient.CreateVoiceStream();
 
-                    _stream = new OpusEncodeStream(outStream, PcmFormat.Short, VoiceChannels.Stereo, OpusApplication.Audio);
+                    _stream = new OpusEncodeStream(voiceStream, PcmFormat.Short, VoiceChannels.Stereo, OpusApplication.Audio);
                 }
 
                 ProcessStartInfo startInfo = new("ffmpeg")
